@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>لوحة أداء مدرسة مكة المكرمة</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg:#0b1120; --surface:#111827; --surface2:#1a2236; --border:#1e2d45;
+  --gold:#d4a017; --goldL:#f0c040; --gold-dim:rgba(212,160,23,.12);
+  --green:#10b981; --green-dim:rgba(16,185,129,.12);
+  --red:#ef4444; --red-dim:rgba(239,68,68,.1);
+  --blue:#3b82f6; --blue-dim:rgba(59,130,246,.1);
+  --orange:#f97316; --orange-dim:rgba(249,115,22,.1);
+  --purple:#8b5cf6; --text:#e2e8f0; --muted:#64748b;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'Tajawal',sans-serif;background:var(--bg);color:var(--text);direction:rtl;min-height:100vh;overflow-x:hidden;}
+
+/* TOPBAR */
+.topbar{background:linear-gradient(90deg,#0d1b2e,#0b1120);border-bottom:1px solid var(--border);padding:0 22px;height:58px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:200;}
+.logo{display:flex;align-items:center;gap:10px;}
+.logo-icon{width:36px;height:36px;background:linear-gradient(135deg,var(--gold),var(--goldL));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;}
+.logo h1{font-size:.9rem;font-weight:800;color:var(--goldL);line-height:1.1;}
+.logo p{font-size:.66rem;color:var(--muted);}
+.topbar-right{display:flex;align-items:center;gap:8px;}
+.live-badge{display:flex;align-items:center;gap:5px;background:rgba(16,185,129,.12);border:1px solid rgba(16,185,129,.3);color:var(--green);padding:3px 10px;border-radius:20px;font-size:.7rem;font-weight:700;}
+.live-dot{width:6px;height:6px;background:var(--green);border-radius:50%;animation:blink 1.5s infinite;}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.3}}
+.btn{display:flex;align-items:center;gap:5px;padding:6px 13px;border-radius:8px;border:none;font-family:'Tajawal',sans-serif;font-size:.78rem;font-weight:700;cursor:pointer;transition:all .2s;}
+.btn-gold{background:var(--gold);color:#0b1120;} .btn-gold:hover{background:var(--goldL);}
+.btn-outline{background:transparent;border:1px solid var(--border);color:var(--text);} .btn-outline:hover{background:var(--surface2);border-color:var(--gold);}
+.btn-green{background:var(--green);color:#fff;} .btn-red{background:var(--red);color:#fff;}
+#clock{font-size:.72rem;color:var(--muted);font-weight:600;}
+
+/* APP LAYOUT */
+.app{display:flex;height:calc(100vh - 58px);overflow:hidden;}
+
+/* SIDEBAR */
+.edit-panel{width:370px;flex-shrink:0;background:var(--surface);border-left:1px solid var(--border);display:flex;flex-direction:column;transform:translateX(-100%);transition:transform .35s cubic-bezier(.4,0,.2,1);position:absolute;right:0;top:58px;height:calc(100vh - 58px);z-index:150;overflow:hidden;}
+.edit-panel.open{transform:translateX(0);}
+.panel-header{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-shrink:0;}
+.panel-header h2{font-size:.9rem;font-weight:800;color:var(--goldL);}
+.panel-close{background:none;border:none;color:var(--muted);font-size:1.2rem;cursor:pointer;padding:3px 7px;border-radius:6px;} .panel-close:hover{background:var(--surface2);color:var(--text);}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0;overflow-x:auto;}
+.ptab{flex:1;min-width:60px;padding:9px 6px;background:none;border:none;font-family:'Tajawal',sans-serif;font-size:.72rem;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;white-space:nowrap;}
+.ptab.active{color:var(--goldL);border-bottom-color:var(--gold);}
+.panel-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:12px;}
+.panel-body::-webkit-scrollbar{width:3px;} .panel-body::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px;}
+.pane-section{display:none;flex-direction:column;gap:10px;} .pane-section.active{display:flex;}
+.fg{background:var(--surface2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:9px;}
+.fg-title{font-size:.7rem;color:var(--gold);font-weight:700;letter-spacing:.5px;text-transform:uppercase;}
+.fr{display:flex;flex-direction:column;gap:3px;}
+.fr label{font-size:.71rem;color:var(--muted);font-weight:600;}
+.fr input,.fr select{background:var(--bg);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:'Tajawal',sans-serif;font-size:.82rem;padding:7px 9px;width:100%;outline:none;transition:border-color .2s;}
+.fr input:focus{border-color:var(--gold);}
+.fr input[type=range]{padding:3px 0;cursor:pointer;accent-color:var(--gold);}
+.rv{font-size:.78rem;font-weight:800;color:var(--goldL);text-align:center;}
+hr.sep{border:none;border-top:1px solid var(--border);}
+.panel-footer{padding:12px 14px;border-top:1px solid var(--border);display:flex;gap:8px;flex-shrink:0;}
+.panel-footer .btn{flex:1;justify-content:center;}
+
+/* CSV */
+.csv-drop{border:2px dashed var(--border);border-radius:9px;padding:20px;text-align:center;cursor:pointer;transition:all .2s;color:var(--muted);font-size:.78rem;}
+.csv-drop:hover{border-color:var(--gold);color:var(--goldL);background:var(--gold-dim);}
+.csv-drop .ci{font-size:1.8rem;display:block;margin-bottom:6px;}
+.csv-preview{background:var(--bg);border-radius:7px;padding:10px;font-size:.68rem;color:var(--muted);max-height:100px;overflow-y:auto;white-space:pre-wrap;margin-top:8px;}
+
+/* OVERLAY */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:140;} .overlay.show{display:block;}
+
+/* DASHBOARD */
+.dash{flex:1;overflow-y:auto;padding:18px 20px;display:flex;flex-direction:column;gap:16px;}
+.dash::-webkit-scrollbar{width:4px;} .dash::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px;}
+
+/* KPI */
+.kpi-row{display:grid;grid-template-columns:repeat(6,1fr);gap:11px;}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:14px 13px;position:relative;overflow:hidden;cursor:pointer;transition:transform .2s,border-color .2s;}
+.kpi-card:hover{transform:translateY(-3px);border-color:var(--gold);}
+.kpi-card::after{content:'';position:absolute;bottom:0;left:0;right:0;height:3px;border-radius:0 0 13px 13px;}
+.kpi-card.gold::after{background:var(--gold);} .kpi-card.green::after{background:var(--green);}
+.kpi-card.red::after{background:var(--red);} .kpi-card.blue::after{background:var(--blue);}
+.kpi-card.orange::after{background:var(--orange);} .kpi-card.purple::after{background:var(--purple);}
+.kpi-hint{position:absolute;top:7px;left:7px;font-size:.58rem;color:var(--muted);opacity:0;transition:opacity .2s;background:var(--surface2);padding:2px 5px;border-radius:4px;}
+.kpi-card:hover .kpi-hint{opacity:1;}
+.kpi-icon{font-size:1.3rem;margin-bottom:7px;}
+.kpi-num{font-size:1.7rem;font-weight:900;line-height:1;margin-bottom:3px;}
+.kpi-card.gold .kpi-num{color:var(--goldL);} .kpi-card.green .kpi-num{color:var(--green);}
+.kpi-card.red .kpi-num{color:var(--red);} .kpi-card.blue .kpi-num{color:var(--blue);}
+.kpi-card.orange .kpi-num{color:var(--orange);} .kpi-card.purple .kpi-num{color:var(--purple);}
+.kpi-label{font-size:.67rem;color:var(--muted);font-weight:500;}
+.kpi-trend{position:absolute;top:10px;left:10px;font-size:.62rem;font-weight:700;}
+.tup{color:var(--green);} .tdown{color:var(--red);}
+
+/* CARDS */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:13px;padding:16px;}
+.ct{font-size:.85rem;font-weight:800;color:var(--text);margin-bottom:12px;display:flex;align-items:center;justify-content:space-between;}
+.ct .sub{font-size:.68rem;color:var(--muted);font-weight:400;}
+
+/* GRIDS */
+.g3-2-1{display:grid;grid-template-columns:1fr 2.1fr 1.15fr;gap:14px;}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+.g3-2{display:grid;grid-template-columns:3fr 2fr;gap:14px;}
+
+/* SCORE */
+.big-score{text-align:center;padding:14px 0;}
+.snum{font-size:4.2rem;font-weight:900;color:var(--goldL);line-height:1;}
+.slbl{font-size:.78rem;color:var(--muted);margin-top:5px;}
+.sstatus{display:inline-flex;align-items:center;gap:5px;margin-top:9px;background:var(--green-dim);border:1px solid rgba(16,185,129,.3);color:var(--green);padding:4px 13px;border-radius:20px;font-weight:700;font-size:.75rem;}
+.ms{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:12px;}
+.ms-item{background:var(--surface2);border-radius:8px;padding:10px;text-align:center;}
+.ms-item .n{font-size:1.25rem;font-weight:900;}
+.ms-item .l{font-size:.62rem;color:var(--muted);margin-top:2px;}
+
+/* PROGRESS */
+.pl{display:flex;flex-direction:column;gap:10px;}
+.ph{display:flex;justify-content:space-between;margin-bottom:4px;font-size:.78rem;font-weight:600;}
+.pv{font-weight:800;}
+.pb{height:7px;background:var(--surface2);border-radius:10px;overflow:hidden;}
+.pf{height:100%;border-radius:10px;transition:width 1s;}
+
+/* TABLE */
+.dt{width:100%;border-collapse:collapse;}
+.dt th{text-align:right;font-size:.65rem;color:var(--muted);font-weight:700;padding:6px 7px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px;}
+.dt td{padding:8px 7px;font-size:.75rem;border-bottom:1px solid rgba(30,45,69,.5);vertical-align:middle;}
+.dt tr:hover td{background:var(--surface2);} .dt tr:last-child td{border-bottom:none;}
+
+/* PILLS */
+.pill{display:inline-flex;align-items:center;padding:2px 7px;border-radius:20px;font-size:.65rem;font-weight:700;}
+.pg{background:var(--green-dim);color:var(--green);} .pr{background:var(--red-dim);color:var(--red);}
+.po{background:var(--orange-dim);color:var(--orange);} .pgo{background:var(--gold-dim);color:var(--goldL);}
+.pb2{background:var(--blue-dim);color:var(--blue);}
+
+/* ALERTS */
+.al{display:flex;flex-direction:column;gap:7px;}
+.ai{display:flex;align-items:flex-start;gap:9px;padding:9px 11px;border-radius:8px;font-size:.74rem;border-right:3px solid;}
+.ah{background:var(--red-dim);border-color:var(--red);} .am{background:var(--orange-dim);border-color:var(--orange);}
+.alo{background:var(--blue-dim);border-color:var(--blue);} .aok{background:var(--green-dim);border-color:var(--green);}
+.ai .ico{font-size:.95rem;flex-shrink:0;margin-top:1px;} .ai .atxt{flex:1;}
+.ai .atxt strong{display:block;margin-bottom:1px;font-size:.76rem;}
+.ai .atm{font-size:.62rem;color:var(--muted);white-space:nowrap;}
+
+/* RANK */
+.rl{display:flex;flex-direction:column;gap:7px;}
+.ri{display:flex;align-items:center;gap:9px;padding:7px 9px;background:var(--surface2);border-radius:8px;}
+.rn{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.67rem;font-weight:800;flex-shrink:0;}
+.r1{background:var(--gold);color:#0b1120;} .r2{background:#9ca3af;color:#0b1120;}
+.r3{background:#b45309;color:#fff;} .ro{background:var(--border);color:var(--muted);}
+.ri-info{flex:1;} .ri-info .rname{font-size:.78rem;font-weight:700;} .ri-info .rsub{font-size:.64rem;color:var(--muted);}
+.rscore{font-weight:800;font-size:.88rem;color:var(--goldL);}
+
+/* GOALS */
+.gml{display:flex;flex-direction:column;gap:13px;}
+.gmh{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.gmn{font-size:.78rem;font-weight:700;} .gmv{font-size:.68rem;color:var(--muted);}
+.gmv span{color:var(--goldL);font-weight:700;}
+.gmbar{height:10px;background:var(--surface2);border-radius:10px;overflow:hidden;position:relative;}
+.gmfill{height:100%;border-radius:10px;}
+.gmt{position:absolute;top:-4px;width:2px;height:18px;background:var(--gold);border-radius:2px;}
+
+/* ACTIVITY */
+.acl{display:flex;flex-direction:column;}
+.aci{display:flex;gap:9px;padding:9px 0;border-bottom:1px solid rgba(30,45,69,.5);}
+.aci:last-child{border-bottom:none;}
+.acico{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.85rem;flex-shrink:0;}
+.actxt{flex:1;} .actxt .tt{font-size:.76rem;font-weight:600;margin-bottom:2px;} .actxt .dd{font-size:.67rem;color:var(--muted);}
+.actm{font-size:.63rem;color:var(--muted);align-self:flex-start;margin-top:3px;white-space:nowrap;}
+
+/* DIVIDER */
+.divider{display:flex;align-items:center;gap:9px;color:var(--muted);font-size:.67rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;}
+.divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border);}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--green);color:#fff;padding:9px 20px;border-radius:30px;font-size:.8rem;font-weight:700;z-index:9999;transition:transform .3s;box-shadow:0 8px 30px rgba(0,0,0,.4);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+
+/* FOOTER */
+.ftr{background:var(--surface);border-top:1px solid var(--border);padding:10px 22px;display:flex;justify-content:space-between;align-items:center;font-size:.68rem;color:var(--muted);}
+.ftr span{color:var(--gold);font-weight:700;}
+
+.cw{position:relative;}
+
+@media(max-width:1250px){.kpi-row{grid-template-columns:repeat(3,1fr);}}
+@media(max-width:950px){.g3-2-1,.g3,.g3-2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🕌</div>
+    <div>
+      <h1 id="d_school">مدرسة مكة المكرمة الثانوية للبنين</h1>
+      <p id="d_sem">لوحة مؤشرات الأداء المؤسسي — الفصل الدراسي الثاني 1446هـ</p>
+    </div>
+  </div>
+  <div class="topbar-right">
+    <div class="live-badge"><div class="live-dot"></div>مباشر</div>
+    <div id="clock"></div>
+    <button class="btn btn-outline" onclick="exportJSON()">📥 تصدير</button>
+    <button class="btn btn-outline" onclick="resetAll()">↺ ضبط</button>
+    <button class="btn btn-gold" onclick="openPanel()">✏️ تعديل البيانات</button>
+  </div>
+</div>
+
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<div class="app">
+
+  <!-- EDIT PANEL -->
+  <div class="edit-panel" id="editPanel">
+    <div class="panel-header">
+      <h2>✏️ تعديل بيانات اللوحة</h2>
+      <button class="panel-close" onclick="closePanel()">✕</button>
+    </div>
+    <div class="panel-tabs">
+      <button class="ptab active" onclick="pt(0)">🏫 المدرسة</button>
+      <button class="ptab" onclick="pt(1)">👨‍🎓 الطلاب</button>
+      <button class="ptab" onclick="pt(2)">👨‍🏫 المعلمون</button>
+      <button class="ptab" onclick="pt(3)">🎯 الأهداف</button>
+      <button class="ptab" onclick="pt(4)">📂 استيراد</button>
+    </div>
+    <div class="panel-body">
+
+      <!-- TAB 0 -->
+      <div class="pane-section active" id="pane0">
+        <div class="fg">
+          <div class="fg-title">🏫 معلومات المدرسة</div>
+          <div class="fr"><label>اسم المدرسة</label><input id="f_school" value="مدرسة مكة المكرمة الثانوية للبنين"></div>
+          <div class="fr"><label>الفصل الدراسي</label><input id="f_sem" value="الفصل الدراسي الثاني 1446هـ"></div>
+          <div class="fr"><label>القائد / المدير</label><input id="f_principal" value="أ. عبدالرحمن الشريف"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">📊 المؤشرات الرئيسية KPIs</div>
+          <div class="fr"><label>إجمالي الطلاب</label><input type="number" id="f_students" value="1247"></div>
+          <div class="fr"><label>نسبة الحضور اليومي %</label><input type="number" id="f_attend" value="94.3" step=".1" min="0" max="100"></div>
+          <div class="fr"><label>متوسط التحصيل %</label><input type="number" id="f_achiev" value="87.6" step=".1" min="0" max="100"></div>
+          <div class="fr"><label>عدد المعلمين</label><input type="number" id="f_teachers" value="68"></div>
+          <div class="fr"><label>عدد الإنجازات</label><input type="number" id="f_awards" value="43"></div>
+          <div class="fr"><label>طلاب في دعم أكاديمي</label><input type="number" id="f_risk" value="18"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">⭐ الدرجات الكلية (شريط التمرير)</div>
+          <div class="fr"><label>مؤشر الأداء الكلي</label><input type="range" id="f_overall" min="0" max="100" value="88" oninput="rv('overall',this.value)"><div class="rv" id="rv_overall">88</div></div>
+          <div class="fr"><label>الجودة التعليمية</label><input type="range" id="f_quality" min="0" max="100" value="92" oninput="rv('quality',this.value)"><div class="rv" id="rv_quality">92</div></div>
+          <div class="fr"><label>البيئة المدرسية</label><input type="range" id="f_env" min="0" max="100" value="85" oninput="rv('env',this.value)"><div class="rv" id="rv_env">85</div></div>
+          <div class="fr"><label>تطوير المعلمين</label><input type="range" id="f_devt" min="0" max="100" value="84" oninput="rv('devt',this.value)"><div class="rv" id="rv_devt">84</div></div>
+          <div class="fr"><label>رضا أولياء الأمور</label><input type="range" id="f_par" min="0" max="100" value="91" oninput="rv('par',this.value)"><div class="rv" id="rv_par">91</div></div>
+        </div>
+      </div>
+
+      <!-- TAB 1 -->
+      <div class="pane-section" id="pane1">
+        <div class="fg">
+          <div class="fg-title">📚 أداء المواد الدراسية %</div>
+          <div class="fr"><label>الرياضيات</label><input type="number" id="f_math" value="91" min="0" max="100"></div>
+          <div class="fr"><label>اللغة العربية</label><input type="number" id="f_arabic" value="88" min="0" max="100"></div>
+          <div class="fr"><label>العلوم</label><input type="number" id="f_science" value="85" min="0" max="100"></div>
+          <div class="fr"><label>اللغة الإنجليزية</label><input type="number" id="f_english" value="79" min="0" max="100"></div>
+          <div class="fr"><label>التربية الإسلامية</label><input type="number" id="f_islamic" value="93" min="0" max="100"></div>
+          <div class="fr"><label>الحاسب الآلي</label><input type="number" id="f_cs" value="72" min="0" max="100"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">📊 توزيع الدرجات (عدد الطلاب)</div>
+          <div class="fr"><label>ممتاز 90+</label><input type="number" id="f_g_exc" value="324"></div>
+          <div class="fr"><label>جيد جداً 80-90</label><input type="number" id="f_g_vg" value="418"></div>
+          <div class="fr"><label>جيد 70-80</label><input type="number" id="f_g_g" value="289"></div>
+          <div class="fr"><label>مقبول 60-70</label><input type="number" id="f_g_p" value="156"></div>
+          <div class="fr"><label>دون المستوى</label><input type="number" id="f_g_f" value="60"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">🚨 الطلاب في خطر أكاديمي</div>
+          <div class="fr"><label>خطر عالٍ</label><input type="number" id="f_rh" value="18"></div>
+          <div class="fr"><label>خطر متوسط</label><input type="number" id="f_rm" value="47"></div>
+          <div class="fr"><label>خطر منخفض</label><input type="number" id="f_rl" value="112"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">💬 رضا أولياء الأمور %</div>
+          <div class="fr"><label>ممتاز</label><input type="number" id="f_pe" value="45"></div>
+          <div class="fr"><label>جيد جداً</label><input type="number" id="f_pvg" value="32"></div>
+          <div class="fr"><label>جيد</label><input type="number" id="f_pg" value="16"></div>
+          <div class="fr"><label>مقبول</label><input type="number" id="f_pp" value="7"></div>
+        </div>
+      </div>
+
+      <!-- TAB 2 -->
+      <div class="pane-section" id="pane2">
+        <div class="fg">
+          <div class="fg-title">👑 أفضل المعلمين أداءً</div>
+          <div class="fr"><label>المعلم الأول — الاسم</label><input id="f_t1n" value="أ. سالم العمري"></div>
+          <div class="fr"><label>المعلم الأول — المادة</label><input id="f_t1s" value="رياضيات — الثانوية"></div>
+          <div class="fr"><label>المعلم الأول — الدرجة</label><input type="number" id="f_t1sc" value="98.2" step=".1"></div>
+          <hr class="sep">
+          <div class="fr"><label>المعلم الثاني — الاسم</label><input id="f_t2n" value="أ. خالد الغامدي"></div>
+          <div class="fr"><label>المعلم الثاني — المادة</label><input id="f_t2s" value="التربية الإسلامية"></div>
+          <div class="fr"><label>المعلم الثاني — الدرجة</label><input type="number" id="f_t2sc" value="96.7" step=".1"></div>
+          <hr class="sep">
+          <div class="fr"><label>المعلم الثالث — الاسم</label><input id="f_t3n" value="أ. فهد الزهراني"></div>
+          <div class="fr"><label>المعلم الثالث — المادة</label><input id="f_t3s" value="العلوم — الثانوية"></div>
+          <div class="fr"><label>المعلم الثالث — الدرجة</label><input type="number" id="f_t3sc" value="95.1" step=".1"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">🏗️ استخدام الموارد %</div>
+          <div class="fr"><label>مختبرات العلوم</label><input type="number" id="f_rsci" value="78" min="0" max="100"></div>
+          <div class="fr"><label>قاعات الحاسب</label><input type="number" id="f_rcs" value="45" min="0" max="100"></div>
+          <div class="fr"><label>المكتبة</label><input type="number" id="f_rlib" value="62" min="0" max="100"></div>
+          <div class="fr"><label>الملاعب</label><input type="number" id="f_rsport" value="88" min="0" max="100"></div>
+          <div class="fr"><label>قاعة الاجتماعات</label><input type="number" id="f_rhall" value="55" min="0" max="100"></div>
+          <div class="fr"><label>قاعة الأنشطة</label><input type="number" id="f_ract" value="30" min="0" max="100"></div>
+        </div>
+      </div>
+
+      <!-- TAB 3 -->
+      <div class="pane-section" id="pane3">
+        <div class="fg">
+          <div class="fg-title">🎯 الأهداف الاستراتيجية</div>
+          <div class="fr"><label>هدف النجاح — الحالي %</label><input type="number" id="f_g1c" value="91" min="0" max="100"></div>
+          <div class="fr"><label>هدف النجاح — المستهدف %</label><input type="number" id="f_g1t" value="95" min="0" max="100"></div>
+          <hr class="sep">
+          <div class="fr"><label>حضور المعلمين — الحالي %</label><input type="number" id="f_g2c" value="96" min="0" max="100"></div>
+          <div class="fr"><label>حضور المعلمين — المستهدف %</label><input type="number" id="f_g2t" value="98" min="0" max="100"></div>
+          <hr class="sep">
+          <div class="fr"><label>تدريب المعلمين — الحالي %</label><input type="number" id="f_g3c" value="74" min="0" max="100"></div>
+          <div class="fr"><label>تدريب المعلمين — المستهدف %</label><input type="number" id="f_g3t" value="100" min="0" max="100"></div>
+          <hr class="sep">
+          <div class="fr"><label>رضا الأهالي — الحالي %</label><input type="number" id="f_g4c" value="87" min="0" max="100"></div>
+          <div class="fr"><label>رضا الأهالي — المستهدف %</label><input type="number" id="f_g4t" value="90" min="0" max="100"></div>
+          <hr class="sep">
+          <div class="fr"><label>الأنشطة اللامنهجية — الحالي %</label><input type="number" id="f_g5c" value="60" min="0" max="100"></div>
+          <div class="fr"><label>الأنشطة اللامنهجية — المستهدف %</label><input type="number" id="f_g5t" value="100" min="0" max="100"></div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">🕸️ مؤشرات الرادار (من 100)</div>
+          <div class="fr"><label>التحصيل</label><input type="number" id="f_ra" value="88" min="0" max="100"></div>
+          <div class="fr"><label>الحضور</label><input type="number" id="f_rb" value="94" min="0" max="100"></div>
+          <div class="fr"><label>الأنشطة</label><input type="number" id="f_rc" value="72" min="0" max="100"></div>
+          <div class="fr"><label>التطوير</label><input type="number" id="f_rd" value="74" min="0" max="100"></div>
+          <div class="fr"><label>رضا الأهالي</label><input type="number" id="f_re" value="87" min="0" max="100"></div>
+          <div class="fr"><label>البيئة</label><input type="number" id="f_rf" value="85" min="0" max="100"></div>
+          <div class="fr"><label>القيادة</label><input type="number" id="f_rg" value="90" min="0" max="100"></div>
+          <div class="fr"><label>الابتكار</label><input type="number" id="f_rh" value="68" min="0" max="100"></div>
+        </div>
+      </div>
+
+      <!-- TAB 4 -->
+      <div class="pane-section" id="pane4">
+        <div class="fg">
+          <div class="fg-title">📂 استيراد من ملف CSV</div>
+          <p style="font-size:.72rem;color:var(--muted);line-height:1.7">ملف CSV بعمودين: <strong style="color:var(--goldL)">المفتاح</strong> و<strong style="color:var(--goldL)">القيمة</strong></p>
+          <div class="csv-drop" id="csvDrop" onclick="document.getElementById('csvFile').click()">
+            <span class="ci">📊</span>
+            اضغط هنا أو اسحب ملف CSV<br>
+            <small style="color:var(--muted);font-size:.68rem">يقبل ملفات .csv بترميز UTF-8</small>
+          </div>
+          <input type="file" id="csvFile" accept=".csv" style="display:none" onchange="importCSV(this)">
+          <div id="csvPreview" style="display:none">
+            <p style="font-size:.7rem;color:var(--green);margin-bottom:5px;font-weight:700">✅ تم قراءة الملف:</p>
+            <div class="csv-preview" id="csvContent"></div>
+          </div>
+        </div>
+        <div class="fg">
+          <div class="fg-title">⬇️ تحميل نموذج CSV</div>
+          <p style="font-size:.72rem;color:var(--muted);line-height:1.6">حمّل النموذج وعدّل القيم ثم استورده</p>
+          <button class="btn btn-outline" style="width:100%;justify-content:center;margin-top:4px" onclick="dlTemplate()">⬇️ تحميل نموذج CSV</button>
+        </div>
+        <div class="fg">
+          <div class="fg-title">ℹ️ معلومات</div>
+          <p style="font-size:.72rem;color:var(--muted);line-height:1.7">البيانات تُحفظ في الذاكرة أثناء جلسة العمل الحالية. استخدم "تصدير" لحفظ بياناتك كملف JSON واستيرادها لاحقاً.</p>
+        </div>
+      </div>
+
+    </div>
+    <div class="panel-footer">
+      <button class="btn btn-red" onclick="closePanel()">إلغاء</button>
+      <button class="btn btn-green" style="flex:2;justify-content:center" onclick="applyData()">💾 حفظ وتحديث اللوحة</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="dash" id="dash">
+
+    <!-- KPIs -->
+    <div class="kpi-row">
+      <div class="kpi-card gold" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tup">▲ 3.2%</div><div class="kpi-icon">🏫</div><div class="kpi-num" id="d_students">1,247</div><div class="kpi-label">إجمالي الطلاب</div></div>
+      <div class="kpi-card green" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tup">▲ 1.8%</div><div class="kpi-icon">✅</div><div class="kpi-num" id="d_attend">94.3%</div><div class="kpi-label">نسبة الحضور اليومي</div></div>
+      <div class="kpi-card blue" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tup">▲ 5.1%</div><div class="kpi-icon">📊</div><div class="kpi-num" id="d_achiev">87.6%</div><div class="kpi-label">متوسط التحصيل</div></div>
+      <div class="kpi-card orange" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tdown">▼ 0.4%</div><div class="kpi-icon">👨‍🏫</div><div class="kpi-num" id="d_teachers">68</div><div class="kpi-label">عدد المعلمين</div></div>
+      <div class="kpi-card purple" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tup">▲ 8.3%</div><div class="kpi-icon">🏆</div><div class="kpi-num" id="d_awards">43</div><div class="kpi-label">إنجازات الفصل</div></div>
+      <div class="kpi-card red" onclick="openPanel()"><div class="kpi-hint">✏️ تعديل</div><div class="kpi-trend tdown">▼ 2.1%</div><div class="kpi-icon">⚠️</div><div class="kpi-num" id="d_risk">18</div><div class="kpi-label">دعم أكاديمي</div></div>
+    </div>
+
+    <!-- ROW 1 -->
+    <div class="g3-2-1">
+      <div class="card">
+        <div class="ct">⭐ مؤشر الأداء الكلي</div>
+        <div class="big-score">
+          <div class="snum" id="d_overall">88</div>
+          <div class="slbl">من أصل 100 نقطة</div>
+          <div class="sstatus">⬆ ممتاز</div>
+        </div>
+        <div class="ms">
+          <div class="ms-item"><div class="n" style="color:var(--green)" id="d_quality">92</div><div class="l">الجودة التعليمية</div></div>
+          <div class="ms-item"><div class="n" style="color:var(--blue)" id="d_env">85</div><div class="l">البيئة المدرسية</div></div>
+          <div class="ms-item"><div class="n" style="color:var(--orange)" id="d_devt">84</div><div class="l">تطوير المعلمين</div></div>
+          <div class="ms-item"><div class="n" style="color:var(--purple)" id="d_par">91</div><div class="l">رضا أولياء الأمور</div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">📅 نسبة الحضور الشهري <span class="sub">الفصل الثاني 1446هـ</span></div>
+        <div class="cw" style="height:185px"><canvas id="chAttend"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ct">🔔 التنبيهات والمتابعة</div>
+        <div class="al">
+          <div class="ai ah"><div class="ico">🚨</div><div class="atxt"><strong>4 طلاب غياب متكرر</strong><span>الصف الثالث — العلوم</span></div><div class="atm">منذ ساعة</div></div>
+          <div class="ai am"><div class="ico">⚠️</div><div class="atxt"><strong>تراجع درجات الرياضيات</strong><span>الصف الثاني — 68% هذا الأسبوع</span></div><div class="atm">اليوم</div></div>
+          <div class="ai alo"><div class="ico">📋</div><div class="atxt"><strong>جدول اختبارات متضارب</strong><span>3 مواد — الأسبوع القادم</span></div><div class="atm">أمس</div></div>
+          <div class="ai aok"><div class="ico">✅</div><div class="atxt"><strong>اعتماد خطة الترم</strong><span>موافقة وزارة التعليم</span></div><div class="atm">3 أيام</div></div>
+          <div class="ai ah"><div class="ico">🔧</div><div class="atxt"><strong>عطل مختبر الحاسب</strong><span>قاعة 3B — صيانة عاجلة</span></div><div class="atm">4 أيام</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 2 -->
+    <div class="g3">
+      <div class="card">
+        <div class="ct">📈 توزيع الدرجات</div>
+        <div class="cw" style="height:195px"><canvas id="chGrades"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ct">📚 أداء المواد الدراسية</div>
+        <div class="pl">
+          <div><div class="ph"><span>الرياضيات</span><span class="pv" style="color:var(--green)" id="pv_math">91%</span></div><div class="pb"><div class="pf" id="pb_math" style="width:91%;background:linear-gradient(90deg,var(--green),#34d399)"></div></div></div>
+          <div><div class="ph"><span>اللغة العربية</span><span class="pv" style="color:var(--goldL)" id="pv_arabic">88%</span></div><div class="pb"><div class="pf" id="pb_arabic" style="width:88%;background:linear-gradient(90deg,var(--gold),var(--goldL))"></div></div></div>
+          <div><div class="ph"><span>العلوم</span><span class="pv" style="color:var(--blue)" id="pv_science">85%</span></div><div class="pb"><div class="pf" id="pb_science" style="width:85%;background:linear-gradient(90deg,var(--blue),#60a5fa)"></div></div></div>
+          <div><div class="ph"><span>اللغة الإنجليزية</span><span class="pv" style="color:var(--purple)" id="pv_english">79%</span></div><div class="pb"><div class="pf" id="pb_english" style="width:79%;background:linear-gradient(90deg,var(--purple),#a78bfa)"></div></div></div>
+          <div><div class="ph"><span>التربية الإسلامية</span><span class="pv" style="color:var(--orange)" id="pv_islamic">93%</span></div><div class="pb"><div class="pf" id="pb_islamic" style="width:93%;background:linear-gradient(90deg,var(--orange),#fb923c)"></div></div></div>
+          <div><div class="ph"><span>الحاسب الآلي</span><span class="pv" style="color:var(--red)" id="pv_cs">72%</span></div><div class="pb"><div class="pf" id="pb_cs" style="width:72%;background:linear-gradient(90deg,var(--red),#f87171)"></div></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="ct">👑 تصنيف المعلمين</div>
+        <div class="rl">
+          <div class="ri"><div class="rn r1">1</div><div class="ri-info"><div class="rname" id="d_t1n">أ. سالم العمري</div><div class="rsub" id="d_t1s">رياضيات</div></div><div class="rscore" id="d_t1sc">98.2</div></div>
+          <div class="ri"><div class="rn r2">2</div><div class="ri-info"><div class="rname" id="d_t2n">أ. خالد الغامدي</div><div class="rsub" id="d_t2s">التربية الإسلامية</div></div><div class="rscore" id="d_t2sc">96.7</div></div>
+          <div class="ri"><div class="rn r3">3</div><div class="ri-info"><div class="rname" id="d_t3n">أ. فهد الزهراني</div><div class="rsub" id="d_t3s">العلوم</div></div><div class="rscore" id="d_t3sc">95.1</div></div>
+          <div class="ri"><div class="rn ro">4</div><div class="ri-info"><div class="rname">أ. محمد القرني</div><div class="rsub">اللغة العربية</div></div><div class="rscore">93.8</div></div>
+          <div class="ri"><div class="rn ro">5</div><div class="ri-info"><div class="rname">أ. عمر السلمي</div><div class="rsub">الرياضيات</div></div><div class="rscore">92.4</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ROW 3 -->
+    <div class="g3-2">
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="ct">🎯 الأهداف الاستراتيجية</div>
+          <div class="gml" id="goalsDiv"></div>
+        </div>
+        <div class="card">
+          <div class="ct">🏛️ أداء الفصول الدراسية</div>
+          <table class="dt">
+            <thead><tr><th>الفصل</th><th>المرحلة</th><th>الطلاب</th><th>المتوسط</th><th>الحضور</th><th>الحالة</th></tr></thead>
+            <tbody>
+              <tr><td><strong>أول / أ</strong></td><td>ثانوي</td><td>34</td><td style="color:var(--green);font-weight:800">93.2%</td><td>97%</td><td><span class="pill pg">ممتاز</span></td></tr>
+              <tr><td><strong>أول / ب</strong></td><td>ثانوي</td><td>32</td><td style="color:var(--green);font-weight:800">89.7%</td><td>95%</td><td><span class="pill pg">جيد جداً</span></td></tr>
+              <tr><td><strong>ثاني / أ</strong></td><td>ثانوي</td><td>36</td><td style="color:var(--orange);font-weight:800">78.4%</td><td>91%</td><td><span class="pill po">متابعة</span></td></tr>
+              <tr><td><strong>ثاني / ب</strong></td><td>ثانوي</td><td>35</td><td style="color:var(--goldL);font-weight:800">84.1%</td><td>93%</td><td><span class="pill pgo">جيد</span></td></tr>
+              <tr><td><strong>ثالث / أ</strong></td><td>ثانوي</td><td>33</td><td style="color:var(--green);font-weight:800">91.6%</td><td>98%</td><td><span class="pill pg">ممتاز</span></td></tr>
+              <tr><td><strong>ثالث / ب</strong></td><td>ثانوي</td><td>31</td><td style="color:var(--red);font-weight:800">71.3%</td><td>88%</td><td><span class="pill pr">ضعيف</span></td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:14px">
+        <div class="card">
+          <div class="ct">🕸️ مؤشرات الأداء الشاملة</div>
+          <div class="cw" style="height:220px"><canvas id="chRadar"></canvas></div>
+        </div>
+        <div class="card">
+          <div class="ct">🏗️ استخدام الموارد والمرافق</div>
+          <div class="pl" style="gap:8px">
+            <div><div class="ph"><span>مختبرات العلوم</span><span class="pv" style="color:var(--green)" id="pv_rsci">78%</span></div><div class="pb"><div class="pf" id="pb_rsci" style="width:78%;background:var(--green)"></div></div></div>
+            <div><div class="ph"><span>قاعات الحاسب</span><span class="pv" style="color:var(--orange)" id="pv_rcs">45%</span></div><div class="pb"><div class="pf" id="pb_rcs" style="width:45%;background:var(--orange)"></div></div></div>
+            <div><div class="ph"><span>المكتبة</span><span class="pv" style="color:var(--blue)" id="pv_rlib">62%</span></div><div class="pb"><div class="pf" id="pb_rlib" style="width:62%;background:var(--blue)"></div></div></div>
+            <div><div class="ph"><span>الملاعب</span><span class="pv" style="color:var(--purple)" id="pv_rsport">88%</span></div><div class="pb"><div class="pf" id="pb_rsport" style="width:88%;background:var(--purple)"></div></div></div>
+            <div><div class="ph"><span>قاعة الاجتماعات</span><span class="pv" style="color:var(--goldL)" id="pv_rhall">55%</span></div><div class="pb"><div class="pf" id="pb_rhall" style="width:55%;background:var(--gold)"></div></div></div>
+            <div><div class="ph"><span>قاعة الأنشطة</span><span class="pv" style="color:var(--red)" id="pv_ract">30%</span></div><div class="pb"><div class="pf" id="pb_ract" style="width:30%;background:var(--red)"></div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="divider">مؤشرات إضافية</div>
+
+    <!-- ROW 4 -->
+    <div class="g3">
+      <div class="card">
+        <div class="ct">📊 مقارنة الفصلين</div>
+        <div class="cw" style="height:195px"><canvas id="chCompare"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ct">🚨 الطلاب في خطر أكاديمي</div>
+        <div class="cw" style="height:195px"><canvas id="chRisk"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="ct">💬 رضا أولياء الأمور</div>
+        <div class="cw" style="height:195px"><canvas id="chSat"></canvas></div>
+      </div>
+    </div>
+
+    <div class="ftr">
+      <div>لوحة أداء <span id="ftr_name">مدرسة مكة المكرمة</span></div>
+      <div id="ftr_sem">الفصل الدراسي الثاني 1446هـ</div>
+      <div>إدارة التعليم — منطقة مكة المكرمة</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+Chart.defaults.font.family="'Tajawal',sans-serif";
+Chart.defaults.color='#64748b';
+
+// ── IN-MEMORY DATA (no localStorage) ──────────────────────────
+var D = {
+  school:'مدرسة مكة المكرمة الثانوية للبنين',
+  sem:'الفصل الدراسي الثاني 1446هـ',
+  principal:'أ. عبدالرحمن الشريف',
+  students:1247, attend:94.3, achiev:87.6,
+  teachers:68, awards:43, risk:18,
+  overall:88, quality:92, env:85, devt:84, par:91,
+  math:91, arabic:88, science:85, english:79, islamic:93, cs:72,
+  g_exc:324, g_vg:418, g_g:289, g_p:156, g_f:60,
+  rh:18, rm:47, rl:112,
+  pe:45, pvg:32, pg:16, pp:7,
+  t1n:'أ. سالم العمري', t1s:'رياضيات — الثانوية', t1sc:98.2,
+  t2n:'أ. خالد الغامدي', t2s:'التربية الإسلامية', t2sc:96.7,
+  t3n:'أ. فهد الزهراني', t3s:'العلوم — الثانوية', t3sc:95.1,
+  rsci:78, rcs:45, rlib:62, rsport:88, rhall:55, ract:30,
+  g1c:91,g1t:95, g2c:96,g2t:98, g3c:74,g3t:100,
+  g4c:87,g4t:90, g5c:60,g5t:100,
+  ra:88,rb:94,rc:72,rd:74,re:87,rf:85,rg:90,rh2:68
+};
+
+// ── CHARTS ────────────────────────────────────────────────────
+var charts={};
+function dc(id){var c=Chart.getChart(id);if(c)c.destroy();}
+
+function buildCharts(){
+  var C={g:'#d4a017',gL:'#f0c040',gr:'#10b981',bl:'#3b82f6',or:'#f97316',pu:'#8b5cf6',rd:'#ef4444'};
+
+  dc('chAttend');
+  charts.attend=new Chart(document.getElementById('chAttend'),{type:'line',
+    data:{labels:['محرم','صفر','ربيع الأول','ربيع الثاني','جمادى الأولى','جمادى الثانية','رجب'],
+      datasets:[
+        {label:'الحضور %',data:[91.2,93.5,90.8,94.1,95.3,93.7,D.attend],borderColor:C.gr,backgroundColor:'rgba(16,185,129,.08)',fill:true,tension:.4,pointBackgroundColor:C.gr,pointRadius:4},
+        {label:'الهدف',data:[95,95,95,95,95,95,95],borderColor:C.g,borderDash:[6,4],backgroundColor:'transparent',tension:0,pointRadius:0}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},scales:{x:{grid:{color:'rgba(30,45,69,.6)'},ticks:{color:'#64748b',font:{size:9}}},y:{grid:{color:'rgba(30,45,69,.6)'},ticks:{color:'#64748b',font:{size:9}},min:80,max:100}}}
+  });
+
+  dc('chGrades');
+  charts.grades=new Chart(document.getElementById('chGrades'),{type:'bar',
+    data:{labels:['ممتاز','جيد جداً','جيد','مقبول','دون المستوى'],
+      datasets:[{label:'عدد الطلاب',data:[D.g_exc,D.g_vg,D.g_g,D.g_p,D.g_f],backgroundColor:[C.gr,C.bl,C.g,C.or,C.rd],borderRadius:7,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},y:{grid:{color:'rgba(30,45,69,.6)'},ticks:{color:'#64748b',font:{size:9}}}}}
+  });
+
+  dc('chRadar');
+  charts.radar=new Chart(document.getElementById('chRadar'),{type:'radar',
+    data:{labels:['التحصيل','الحضور','الأنشطة','التطوير','رضا الأهالي','البيئة','القيادة','الابتكار'],
+      datasets:[
+        {label:'هذا الفصل',data:[D.ra,D.rb,D.rc,D.rd,D.re,D.rf,D.rg,D.rh2],borderColor:C.gL,backgroundColor:'rgba(212,160,23,.15)',pointBackgroundColor:C.gL,pointRadius:4},
+        {label:'الفصل الماضي',data:[82,91,65,68,83,80,85,60],borderColor:C.bl,backgroundColor:'rgba(59,130,246,.1)',pointBackgroundColor:C.bl,pointRadius:3}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:9}}}},scales:{r:{grid:{color:'rgba(30,45,69,.8)'},angleLines:{color:'rgba(30,45,69,.8)'},ticks:{color:'#64748b',font:{size:8},backdropColor:'transparent'},pointLabels:{color:'#94a3b8',font:{size:9}},min:0,max:100}}}
+  });
+
+  dc('chCompare');
+  charts.compare=new Chart(document.getElementById('chCompare'),{type:'bar',
+    data:{labels:['تحصيل','حضور','أنشطة','تدريب','رضا'],
+      datasets:[
+        {label:'الفصل الأول',data:[82,91,65,68,83],backgroundColor:'rgba(59,130,246,.7)',borderRadius:6},
+        {label:'الفصل الثاني',data:[D.ra,D.rb,D.rc,D.rd,D.re],backgroundColor:'rgba(212,160,23,.85)',borderRadius:6}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#94a3b8',font:{size:10}}}},scales:{x:{grid:{display:false},ticks:{color:'#64748b',font:{size:9}}},y:{grid:{color:'rgba(30,45,69,.6)'},ticks:{color:'#64748b',font:{size:9}},min:0,max:100}}}
+  });
+
+  dc('chRisk');
+  var safe=Math.max(0,D.students-D.rh-D.rm-D.rl);
+  charts.risk=new Chart(document.getElementById('chRisk'),{type:'doughnut',
+    data:{labels:['خطر عالٍ','خطر متوسط','خطر منخفض','آمن'],datasets:[{data:[D.rh,D.rm,D.rl,safe],backgroundColor:[C.rd,C.or,C.g,C.gr],borderColor:'#111827',borderWidth:3,hoverOffset:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:9},padding:7}}},cutout:'63%'}
+  });
+
+  dc('chSat');
+  charts.sat=new Chart(document.getElementById('chSat'),{type:'doughnut',
+    data:{labels:['ممتاز','جيد جداً','جيد','مقبول'],datasets:[{data:[D.pe,D.pvg,D.pg,D.pp],backgroundColor:[C.gr,C.bl,C.g,C.or],borderColor:'#111827',borderWidth:3,hoverOffset:7}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{color:'#94a3b8',font:{size:9},padding:7}}},cutout:'63%'}
+  });
+}
+
+// ── RENDER DASHBOARD ─────────────────────────────────────────
+function render(){
+  // topbar & footer
+  document.getElementById('d_school').innerText=D.school;
+  document.getElementById('d_sem').innerText='لوحة مؤشرات الأداء المؤسسي — '+D.sem;
+  document.getElementById('ftr_name').innerText=D.school;
+  document.getElementById('ftr_sem').innerText=D.sem;
+
+  // KPIs
+  document.getElementById('d_students').innerText=Number(D.students).toLocaleString('ar-SA');
+  document.getElementById('d_attend').innerText=D.attend+'%';
+  document.getElementById('d_achiev').innerText=D.achiev+'%';
+  document.getElementById('d_teachers').innerText=D.teachers;
+  document.getElementById('d_awards').innerText=D.awards;
+  document.getElementById('d_risk').innerText=D.risk;
+
+  // Overall
+  document.getElementById('d_overall').innerText=D.overall;
+  document.getElementById('d_quality').innerText=D.quality;
+  document.getElementById('d_env').innerText=D.env;
+  document.getElementById('d_devt').innerText=D.devt;
+  document.getElementById('d_par').innerText=D.par;
+
+  // Subjects
+  [['math','math'],['arabic','arabic'],['science','science'],['english','english'],['islamic','islamic'],['cs','cs']].forEach(function(p){
+    document.getElementById('pv_'+p[1]).innerText=D[p[0]]+'%';
+    document.getElementById('pb_'+p[1]).style.width=D[p[0]]+'%';
+  });
+
+  // Teachers
+  document.getElementById('d_t1n').innerText=D.t1n; document.getElementById('d_t1s').innerText=D.t1s; document.getElementById('d_t1sc').innerText=D.t1sc;
+  document.getElementById('d_t2n').innerText=D.t2n; document.getElementById('d_t2s').innerText=D.t2s; document.getElementById('d_t2sc').innerText=D.t2sc;
+  document.getElementById('d_t3n').innerText=D.t3n; document.getElementById('d_t3s').innerText=D.t3s; document.getElementById('d_t3sc').innerText=D.t3sc;
+
+  // Resources
+  [['rsci','rsci'],['rcs','rcs'],['rlib','rlib'],['rsport','rsport'],['rhall','rhall'],['ract','ract']].forEach(function(p){
+    document.getElementById('pv_'+p[1]).innerText=D[p[0]]+'%';
+    document.getElementById('pb_'+p[1]).style.width=D[p[0]]+'%';
+  });
+
+  // Goals
+  var goals=[
+    {n:'رفع نسبة النجاح',c:D.g1c,t:D.g1t,col:'var(--green)'},
+    {n:'حضور المعلمين',c:D.g2c,t:D.g2t,col:'var(--blue)'},
+    {n:'تدريب المعلمين',c:D.g3c,t:D.g3t,col:'var(--orange)'},
+    {n:'رضا أولياء الأمور',c:D.g4c,t:D.g4t,col:'var(--purple)'},
+    {n:'الأنشطة اللامنهجية',c:D.g5c,t:D.g5t,col:'var(--gold)'},
+  ];
+  document.getElementById('goalsDiv').innerHTML=goals.map(function(g){
+    return '<div><div class="gmh"><span class="gmn">'+g.n+'</span><div class="gmv">الحالي: <span>'+g.c+'%</span> — المستهدف: '+g.t+'%</div></div><div class="gmbar"><div class="gmfill" style="width:'+g.c+'%;background:'+g.col+'"></div><div class="gmt" style="right:'+Math.min(g.t,100)+'%"></div></div></div>';
+  }).join('');
+
+  buildCharts();
+}
+
+// ── FIELDS ────────────────────────────────────────────────────
+function g(id){return document.getElementById(id);}
+function gv(id,def){var e=g(id);if(!e)return def;var v=e.value;return (e.type==='range')?parseInt(v):(isNaN(parseFloat(v))?v:parseFloat(v));}
+function sv(id,val){var e=g(id);if(e)e.value=val;}
+function rv(k,val){document.getElementById('rv_'+k).innerText=val;}
+
+function loadFields(){
+  sv('f_school',D.school); sv('f_sem',D.sem); sv('f_principal',D.principal);
+  sv('f_students',D.students); sv('f_attend',D.attend); sv('f_achiev',D.achiev);
+  sv('f_teachers',D.teachers); sv('f_awards',D.awards); sv('f_risk',D.risk);
+  sv('f_overall',D.overall); rv('overall',D.overall);
+  sv('f_quality',D.quality); rv('quality',D.quality);
+  sv('f_env',D.env); rv('env',D.env);
+  sv('f_devt',D.devt); rv('devt',D.devt);
+  sv('f_par',D.par); rv('par',D.par);
+  sv('f_math',D.math); sv('f_arabic',D.arabic); sv('f_science',D.science);
+  sv('f_english',D.english); sv('f_islamic',D.islamic); sv('f_cs',D.cs);
+  sv('f_g_exc',D.g_exc); sv('f_g_vg',D.g_vg); sv('f_g_g',D.g_g); sv('f_g_p',D.g_p); sv('f_g_f',D.g_f);
+  sv('f_rh',D.rh); sv('f_rm',D.rm); sv('f_rl',D.rl);
+  sv('f_pe',D.pe); sv('f_pvg',D.pvg); sv('f_pg',D.pg); sv('f_pp',D.pp);
+  sv('f_t1n',D.t1n); sv('f_t1s',D.t1s); sv('f_t1sc',D.t1sc);
+  sv('f_t2n',D.t2n); sv('f_t2s',D.t2s); sv('f_t2sc',D.t2sc);
+  sv('f_t3n',D.t3n); sv('f_t3s',D.t3s); sv('f_t3sc',D.t3sc);
+  sv('f_rsci',D.rsci); sv('f_rcs',D.rcs); sv('f_rlib',D.rlib);
+  sv('f_rsport',D.rsport); sv('f_rhall',D.rhall); sv('f_ract',D.ract);
+  sv('f_g1c',D.g1c); sv('f_g1t',D.g1t); sv('f_g2c',D.g2c); sv('f_g2t',D.g2t);
+  sv('f_g3c',D.g3c); sv('f_g3t',D.g3t); sv('f_g4c',D.g4c); sv('f_g4t',D.g4t);
+  sv('f_g5c',D.g5c); sv('f_g5t',D.g5t);
+  sv('f_ra',D.ra); sv('f_rb',D.rb); sv('f_rc',D.rc); sv('f_rd',D.rd);
+  sv('f_re',D.re); sv('f_rf',D.rf); sv('f_rg',D.rg); sv('f_rh',D.rh2||68);
+}
+
+function applyData(){
+  D.school=g('f_school').value; D.sem=g('f_sem').value; D.principal=g('f_principal').value;
+  D.students=gv('f_students',1247); D.attend=gv('f_attend',94); D.achiev=gv('f_achiev',87);
+  D.teachers=gv('f_teachers',68); D.awards=gv('f_awards',43); D.risk=gv('f_risk',18);
+  D.overall=gv('f_overall',88); D.quality=gv('f_quality',92); D.env=gv('f_env',85);
+  D.devt=gv('f_devt',84); D.par=gv('f_par',91);
+  D.math=gv('f_math',91); D.arabic=gv('f_arabic',88); D.science=gv('f_science',85);
+  D.english=gv('f_english',79); D.islamic=gv('f_islamic',93); D.cs=gv('f_cs',72);
+  D.g_exc=gv('f_g_exc',324); D.g_vg=gv('f_g_vg',418); D.g_g=gv('f_g_g',289);
+  D.g_p=gv('f_g_p',156); D.g_f=gv('f_g_f',60);
+  D.rh=gv('f_rh',18); D.rm=gv('f_rm',47); D.rl=gv('f_rl',112);
+  D.pe=gv('f_pe',45); D.pvg=gv('f_pvg',32); D.pg=gv('f_pg',16); D.pp=gv('f_pp',7);
+  D.t1n=g('f_t1n').value; D.t1s=g('f_t1s').value; D.t1sc=gv('f_t1sc',98);
+  D.t2n=g('f_t2n').value; D.t2s=g('f_t2s').value; D.t2sc=gv('f_t2sc',96);
+  D.t3n=g('f_t3n').value; D.t3s=g('f_t3s').value; D.t3sc=gv('f_t3sc',95);
+  D.rsci=gv('f_rsci',78); D.rcs=gv('f_rcs',45); D.rlib=gv('f_rlib',62);
+  D.rsport=gv('f_rsport',88); D.rhall=gv('f_rhall',55); D.ract=gv('f_ract',30);
+  D.g1c=gv('f_g1c',91); D.g1t=gv('f_g1t',95); D.g2c=gv('f_g2c',96); D.g2t=gv('f_g2t',98);
+  D.g3c=gv('f_g3c',74); D.g3t=gv('f_g3t',100); D.g4c=gv('f_g4c',87); D.g4t=gv('f_g4t',90);
+  D.g5c=gv('f_g5c',60); D.g5t=gv('f_g5t',100);
+  D.ra=gv('f_ra',88); D.rb=gv('f_rb',94); D.rc=gv('f_rc',72); D.rd=gv('f_rd',74);
+  D.re=gv('f_re',87); D.rf=gv('f_rf',85); D.rg=gv('f_rg',90); D.rh2=gv('f_rh',68);
+  render();
+  closePanel();
+  toast('✅ تم تحديث اللوحة بنجاح!');
+}
+
+// ── PANEL ────────────────────────────────────────────────────
+function openPanel(){loadFields();g('editPanel').classList.add('open');g('overlay').classList.add('show');}
+function closePanel(){g('editPanel').classList.remove('open');g('overlay').classList.remove('show');}
+function pt(i){
+  document.querySelectorAll('.ptab').forEach(function(t,j){t.classList.toggle('active',j===i);});
+  document.querySelectorAll('.pane-section').forEach(function(p,j){p.classList.toggle('active',j===i);});
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function exportJSON(){
+  var b=new Blob([JSON.stringify(D,null,2)],{type:'application/json'});
+  var u=URL.createObjectURL(b);
+  var a=document.createElement('a'); a.href=u; a.download='بيانات_لوحة_الأداء.json'; a.click();
+  URL.revokeObjectURL(u);
+  toast('📥 تم تصدير البيانات!');
+}
+
+function resetAll(){
+  if(confirm('إعادة ضبط جميع البيانات إلى القيم الافتراضية؟')){location.reload();}
+}
+
+// ── CSV ──────────────────────────────────────────────────────
+function importCSV(input){
+  var file=input.files[0]; if(!file)return;
+  var r=new FileReader();
+  r.onload=function(e){
+    var txt=e.target.result;
+    g('csvPreview').style.display='block';
+    g('csvContent').innerText=txt.substring(0,600)+(txt.length>600?'\n...':'');
+    var lines=txt.trim().split('\n'); var updated=0;
+    lines.forEach(function(line,i){
+      if(i===0&&(line.includes('مفتاح')||line.toLowerCase().includes('key')))return;
+      var p=line.split(','); if(p.length<2)return;
+      var k=p[0].trim(), v=p[1].trim();
+      if(k in D){D[k]=isNaN(v)?v:parseFloat(v); updated++;}
+    });
+    if(updated>0){render();loadFields();toast('✅ تم استيراد '+updated+' قيمة!');}
+    else{toast('⚠️ لم يُتعرف على بيانات في الملف','orange');}
+  };
+  r.readAsText(file,'UTF-8');
+}
+
+function dlTemplate(){
+  var rows='مفتاح,قيمة,الوصف\n';
+  var map={students:'إجمالي الطلاب',attend:'نسبة الحضور %',achiev:'متوسط التحصيل %',teachers:'عدد المعلمين',awards:'عدد الإنجازات',risk:'دعم أكاديمي',overall:'الدرجة الكلية',math:'الرياضيات %',arabic:'العربية %',science:'العلوم %',english:'الإنجليزية %',islamic:'التربية الإسلامية %',cs:'الحاسب %',g_exc:'طلاب ممتاز',g_vg:'طلاب جيد جداً',g_g:'طلاب جيد',g_p:'طلاب مقبول',g_f:'دون المستوى',rh:'خطر عالٍ',rm:'خطر متوسط',rl:'خطر منخفض',g1c:'هدف النجاح الحالي',g1t:'هدف النجاح المستهدف'};
+  Object.entries(map).forEach(function(e){rows+=e[0]+','+D[e[0]]+','+e[1]+'\n';});
+  var b=new Blob(['\uFEFF'+rows],{type:'text/csv;charset=utf-8'});
+  var u=URL.createObjectURL(b); var a=document.createElement('a');
+  a.href=u; a.download='نموذج_البيانات.csv'; a.click(); URL.revokeObjectURL(u);
+}
+
+// drag-drop CSV
+document.addEventListener('DOMContentLoaded',function(){
+  var drop=document.getElementById('csvDrop');
+  drop.addEventListener('dragover',function(e){e.preventDefault();drop.style.borderColor='var(--gold)';});
+  drop.addEventListener('dragleave',function(){drop.style.borderColor='';});
+  drop.addEventListener('drop',function(e){
+    e.preventDefault(); drop.style.borderColor='';
+    var fi=e.dataTransfer.files[0];
+    if(fi){var dt=new DataTransfer(); dt.items.add(fi); document.getElementById('csvFile').files=dt.files; importCSV(document.getElementById('csvFile'));}
+  });
+});
+
+// ── TOAST ────────────────────────────────────────────────────
+function toast(msg,color){
+  var t=g('toast'); t.innerText=msg;
+  t.style.background=color==='orange'?'#f97316':color==='red'?'#ef4444':'#10b981';
+  t.classList.add('show'); setTimeout(function(){t.classList.remove('show');},3000);
+}
+
+// ── CLOCK ────────────────────────────────────────────────────
+function tick(){g('clock').innerText=new Date().toLocaleTimeString('ar-SA',{hour:'2-digit',minute:'2-digit',second:'2-digit'});}
+setInterval(tick,1000); tick();
+
+// ── BOOT ─────────────────────────────────────────────────────
+render();
+</script>
+</body>
+</html>
